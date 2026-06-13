@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stop it's complete | أتوبيس كومبليت</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Tahoma, Arial;
+}
+
+body{
+    min-height:100vh;
+    background:linear-gradient(135deg,#0f172a,#1e1b4b,#311042);
+    color:#fff;
+    padding:20px;
+}
+
+.container{max-width:1100px;margin:auto}
+
+h1{
+    text-align:center;
+    margin-bottom:20px;
+}
+
+.card{
+    background:rgba(255,255,255,0.05);
+    padding:20px;
+    border-radius:20px;
+    margin-bottom:20px;
+}
+
+.top{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:10px;
+}
+
+.letter,.timer{
+    width:80px;
+    height:80px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:30px;
+    font-weight:bold;
+    border-radius:15px;
+}
+
+.letter{background:green}
+.timer{background:red;border-radius:50%}
+
+button{
+    padding:10px 15px;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+.start{background:#22c55e}
+.stop{background:#ef4444}
+.lang{background:#3b82f6;color:#fff}
+
+.players{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+    gap:15px;
+}
+
+.player{
+    background:rgba(255,255,255,0.03);
+    padding:15px;
+    border-radius:15px;
+}
+
+.player h3{
+    margin-bottom:10px;
+}
+
+input{
+    width:100%;
+    margin:5px 0;
+    padding:8px;
+    border-radius:8px;
+    border:none;
+}
+
+.winner{
+    text-align:center;
+    padding:15px;
+    background:#10b981;
+    border-radius:15px;
+    margin-top:15px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1 id="title">🚌 أتوبيس كومبليت</h1>
+
+<div class="card">
+<div class="top">
+    <div class="letter" id="letter">-</div>
+    <div class="timer" id="timer">60</div>
+
+    <div>
+        <button class="start" id="startBtn">ابدأ</button>
+        <button class="stop" id="stopBtn">Stop</button>
+        <button class="lang" onclick="toggleLang()">EN / AR</button>
+    </div>
+</div>
+</div>
+
+<div class="players" id="players"></div>
+
+<div id="result"></div>
+
+</div>
+
+<script>
+
+let lang="ar";
+
+const txt={
+ar:{
+start:"ابدأ",
+stop:"إيقاف",
+name:"اسمك",
+boy:"ولد",
+girl:"بنت",
+animal:"حيوان",
+plant:"نبات",
+obj:"جماد",
+country:"بلد",
+title:"🚌 أتوبيس كومبليت",
+scoreText: "🏆 النتيجة الحالية: "
+},
+en:{
+start:"Start",
+stop:"Stop",
+name:"Your Name",
+boy:"Boy",
+girl:"Girl",
+animal:"Animal",
+plant:"Plant",
+obj:"Object",
+country:"Country",
+title:"🚌 Stop it's complete",
+scoreText: "🏆 Your Score: "
+}
+};
+
+const letters = {
+    ar: "ابتثجحخدذرزسشصضطظعغفقكلمنهوي",
+    en: "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+};
+
+// قاموس كامل لجميع الحروف العربية والإنجليزية لضمان إجابة الكمبيوتر بالحرف الصحيح دائماً
+const botData = {
+    ar: {
+        "ا": {boy:"أحمد", girl:"أمل", animal:"أسد", plant:"أرز", obj:"إبريق", country:"ألمانيا"},
+        "ب": {boy:"باسم", girl:"بسمة", animal:"بطة", plant:"برتقال", obj:"باب", country:"برازيل"},
+        "ت": {boy:"تامر", girl:"تهاني", animal:"تمساح", plant:"تمر", obj:"تلفاز", country:"تونس"},
+        "ث": {boy:"ثابت", girl:"ثريا", animal:"ثعلب", plant:"ثوم", obj:"ثلاجة", country:"ثيساليا"},
+        "ج": {boy:"جلال", girl:"جميلة", animal:"جمل", plant:"جوافة", obj:"جدار", country:"جزائر"},
+        "ح": {boy:"حسام", girl:"حنان", animal:"حمار", plant:"حمص", obj:"حبل", country:"حجاز"},
+        "خ": {boy:"خالد", girl:"خديجة", animal:"خروف", plant:"خوخ", obj:"خاتم", country:"خرطوم"},
+        "د": {boy:"داوود", girl:"دينا", animal:"دلفين", plant:"دراق", obj:"دفتر", country:"دولار"},
+        "ذ": {boy:"ذكير", girl:"ذكية", animal:"ذئب", plant:"ذرة", obj:"ذراع", country:"ذمار"},
+        "ر": {boy:"رامي", girl:"رانيا", animal:"راكون", plant:"رومان", obj:"رادار", country:"روسيا"},
+        "ز": {boy:"زياد", girl:"زينب", animal:"زرافة", plant:"زعتر", obj:"زجاج", country:"زامبيا"},
+        "س": {boy:"سامح", girl:"سلوى", animal:"سنجاب", plant:"سبانخ", obj:"ساعة", country:"سودان"},
+        "ش": {boy:"شادي", girl:"شادية", animal:"شامبانزي", plant:"شمام", obj:"شباك", country:"شيلي"},
+        "ص": {boy:"صلاح", girl:"صفاء", animal:"صقر", plant:"صبار", obj:"صندوق", country:"صومال"},
+        "ض": {boy:"ضياء", girl:"ضحى", animal:"ضبع", plant:"ضومر", obj:"ضمادة", country:"ضمد"},
+        "ط": {boy:"طارق", girl:"طاهرة", animal:"طاووس", plant:"طماطم", obj:"طاولة", country:"طبريا"},
+        "ظ": {boy:"ظافر", girl:"ظريفة", animal:"ظبي", plant:"ظيان", obj:"ظرف", country:"ظهران"},
+        "ع": {boy:"عادل", girl:"علا", animal:"عصفور", plant:"عدس", obj:"عربة", country:"عراق"},
+        "غ": {boy:"غسان", girl:"غادة", animal:"غزال", plant:"غار", obj:"غسالة", country:"غانا"},
+        "ف": {boy:"فادي", girl:"فاطمة", animal:"فهد", plant:"فراولة", obj:"فانوس", country:"فرنسا"},
+        "ق": {boy:"قاسم", girl:"قمر", animal:"قرد", plant:"قرنبيط", obj:"قلم", country:"قطر"},
+        "ك": {boy:"كريم", girl:"كاميلية", animal:"كلب", plant:"كوسا", obj:"كرسي", country:"كويت"},
+        "ل": {boy:"لؤي", girl:"ليلى", animal:"لقلق", plant:"ليمون", obj:"لوحة", country:"لبنان"},
+        "م": {boy:"محمد", girl:"منى", animal:"ماعز", plant:"مانجو", obj:"مرآة", country:"مصر"},
+        "ن": {boy:"نادر", girl:"نادية", animal:"نمر", plant:"نعناع", obj:"نافذة", country:"نمسا"},
+        "ه": {boy:"هاني", girl:"هند", animal:"هدهد", plant:"هيل", obj:"هاتف", country:"هند"},
+        "و": {boy:"وليد", girl:"وفاء", animal:"وعل", plant:"ورد", obj:"وسادة", country:"ويلز"},
+        "ي": {boy:"ياسر", girl:"ياسمين", animal:"يمامة", plant:"يوسفي", obj:"يويو", country:"يونان"}
+    },
+    en: {
+        "A": {boy:"Albert", girl:"Amanda", animal:"Alligator", plant:"Apple", obj:"Airplane", country:"Austria"},
+        "B": {boy:"Brian", girl:"Bella", animal:"Bear", plant:"Banana", obj:"Book", country:"Brazil"},
+        "C": {boy:"Charlie", girl:"Chloe", animal:"Cat", plant:"Carrot", obj:"Camera", country:"Canada"},
+        "D": {boy:"David", girl:"Diana", animal:"Dog", plant:"Date", obj:"Door", country:"Denmark"},
+        "E": {boy:"Edward", girl:"Emma", animal:"Elephant", plant:"Elderberry", obj:"Eraser", country:"Egypt"},
+        "F": {boy:"Frank", girl:"Fiona", animal:"Fox", plant:"Fig", obj:"Fork", country:"France"},
+        "G": {boy:"George", girl:"Grace", animal:"Giraffe", plant:"Grape", obj:"Guitar", country:"Germany"},
+        "H": {boy:"Harry", girl:"Hannah", animal:"Horse", plant:"Hazelnut", obj:"Hammer", country:"Hungary"},
+        "I": {boy:"Ian", girl:"Isabella", animal:"Iguana", plant:"Ivy", obj:"Iron", country:"Italy"},
+        "J": {boy:"Jack", girl:"Jessica", animal:"Jaguar", plant:"Jasmine", obj:"Jacket", country:"Japan"},
+        "K": {boy:"Kevin", girl:"Kate", animal:"Kangaroo", plant:"Kiwi", obj:"Key", country:"Kenya"},
+        "L": {boy:"Luke", girl:"Lily", animal:"Lion", plant:"Lemon", obj:"Lamp", country:"Libya"},
+        "M": {boy:"Michael", girl:"Megan", animal:"Monkey", plant:"Mango", obj:"Mirror", country:"Mexico"},
+        "N": {boy:"Noah", girl:"Natalie", animal:"Newt", plant:"Nectarine", obj:"Needle", country:"Norway"},
+        "O": {boy:"Oliver", girl:"Olivia", animal:"Owl", plant:"Orange", obj:"Oven", country:"Oman"},
+        "P": {boy:"Peter", girl:"Penelope", animal:"Penguin", plant:"Peach", obj:"Pen", country:"Peru"},
+        "Q": {boy:"Quincy", girl:"Queen", animal:"Quail", plant:"Quince", obj:"Quill", country:"Qatar"},
+        "R": {boy:"Ryan", girl:"Rachel", animal:"Rabbit", plant:"Raspberry", obj:"Ring", country:"Russia"},
+        "S": {boy:"Sam", girl:"Sophia", animal:"Snake", plant:"Strawberry", obj:"Spoon", country:"Spain"},
+        "T": {boy:"Thomas", girl:"Taylor", animal:"Tiger", plant:"Tomato", obj:"Table", country:"Turkey"},
+        "U": {boy:"Umar", girl:"Ursula", animal:"Urial", plant:"Uva", obj:"Umbrella", country:"Uganda"},
+        "V": {boy:"Victor", girl:"Victoria", animal:"Vulture", plant:"Vine", obj:"Violin", country:"Vietnam"},
+        "W": {boy:"William", girl:"Wendy", animal:"Wolf", plant:"Watermelon", obj:"Watch", country:"Wales"},
+        "X": {boy:"Xavier", girl:"Xena", animal:"Xerus", plant:"Xanthium", obj:"Xylophone", country:"Xizang"},
+        "Y": {boy:"Yousef", girl:"Yvonne", animal:"Yak", plant:"Yam", obj:"Yacht", country:"Yemen"},
+        "Z": {boy:"Zachary", girl:"Zoe", animal:"Zebra", plant:"Zucchini", obj:"Zipper", country:"Zambia"}
+    }
+};
+
+let current="";
+let time=60;
+let timer;
+let running=false;
+
+function setup(){
+    if(lang === "ar") {
+        document.body.dir = "rtl";
+        document.getElementById("startBtn").innerText = txt.ar.start;
+        document.getElementById("stopBtn").innerText = txt.ar.stop;
+    } else {
+        document.body.dir = "ltr";
+        document.getElementById("startBtn").innerText = txt.en.start;
+        document.getElementById("stopBtn").innerText = txt.en.stop;
+    }
+
+    document.getElementById("players").innerHTML=`
+    <div class="player">
+    <h3>${txt[lang].name}</h3>
+    <input id="name-0" placeholder="${txt[lang].name}">
+
+    <input id="boy-0" placeholder="${txt[lang].boy}">
+    <input id="girl-0" placeholder="${txt[lang].girl}">
+    <input id="animal-0" placeholder="${txt[lang].animal}">
+    <input id="plant-0" placeholder="${txt[lang].plant}">
+    <input id="obj-0" placeholder="${txt[lang].obj}">
+    <input id="country-0" placeholder="${txt[lang].country}">
+    </div>
+
+    <div class="player">
+    <h3>AI</h3>
+    <input disabled value="AI">
+    <input id="boy-1" disabled>
+    <input id="girl-1" disabled>
+    <input id="animal-1" disabled>
+    <input id="plant-1" disabled>
+    <input id="obj-1" disabled>
+    <input id="country-1" disabled>
+    </div>
+    `;
+}
+
+setup();
+
+document.getElementById("startBtn").onclick=()=>{
+    if(running) return;
+    running=true;
+
+    const currentLetters = letters[lang];
+    current = currentLetters[Math.floor(Math.random() * currentLetters.length)];
+    document.getElementById("letter").innerText = current;
+
+    time=60;
+    document.getElementById("timer").innerText=time;
+
+    timer=setInterval(()=>{
+        time--;
+        document.getElementById("timer").innerText=time;
+        if(time<=0) stop();
+    },1000);
+};
+
+document.getElementById("stopBtn").onclick=stop;
+
+function stop(){
+    if(!running) return;
+    running=false;
+    clearInterval(timer);
+
+    let langBot = botData[lang];
+    let b = langBot[current];
+
+    document.getElementById("boy-1").value=b.boy;
+    document.getElementById("girl-1").value=b.girl;
+    document.getElementById("animal-1").value=b.animal;
+    document.getElementById("plant-1").value=b.plant;
+    document.getElementById("obj-1").value=b.obj;
+    document.getElementById("country-1").value=b.country;
+
+    let score=0;
+
+    ["boy","girl","animal","plant","obj","country"].forEach(c=>{
+        let v=document.getElementById(c+"-0").value.trim();
+        if(v){
+            if(v[0].toLowerCase() === current.toLowerCase()) {
+                score+=10;
+            }
+        }
+    });
+
+    document.getElementById("result").innerHTML=
+    `<div class="winner">${txt[lang].scoreText} ${score}</div>`;
+}
+
+function toggleLang(){
+    clearInterval(timer);
+    running = false;
+    document.getElementById("letter").innerText = "-";
+    document.getElementById("timer").innerText = "60";
+    document.getElementById("result").innerHTML = "";
+
+    lang = lang === "ar" ? "en" : "ar";
+    document.getElementById("title").innerText=txt[lang].title;
+    
+    setup();
+}
+
+</script>
+
+</body>
+</html>
